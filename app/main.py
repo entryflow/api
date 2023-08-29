@@ -8,7 +8,10 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup():
-    await get_database().connect()
+    try:
+        await get_database().connect()
+    except Exception as e:
+        print("connect db error, res is  {}".format(e))
     metadata.create_all(sqlalchemy_engine)
     
 @app.on_event("shutdown")
