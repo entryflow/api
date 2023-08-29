@@ -5,5 +5,5 @@ DATABASE_URL = "postgresql://root:pL98wvcPfs@entryflow-test.cifrirvwybqx.us-east
 database = Database(DATABASE_URL)
 sqlalchemy_engine = sqlalchemy.create_engine(DATABASE_URL)
 
-def get_database() -> Database:
+async def get_database() -> Database:
     return database
