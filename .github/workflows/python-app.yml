@@ -1,0 +1,35 @@
+name: Deploy to EC2 with Nginx on Push
+
+on:
+  push:
+    branches:
+      - main
+env:
+  HOST: ....
+  ROOT_PATH: /home/
+  
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Upload to EC2
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        source: "." 
+        target: "/home/ubuntu/app"
+
+    - name: SSH into EC2 and restart Nginx
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        script: |
+          sudo systemctl restart nginx
