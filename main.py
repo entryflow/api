@@ -4,8 +4,7 @@ from schemas import UserBase
 from models import User
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
+def db_init():
     TORTOISE_ORM = {
         "connections": {"default": "postgres://root:pL98wvcPfs@entryflow-test.cifrirvwybqx.us-east-1.rds.amazonaws.com/entryflow"},
         "apps": {
@@ -22,7 +21,9 @@ async def startup_event():
         generate_schemas=True,
         add_exception_handlers=True,
     )
-    
+
+db_init()
+ 
 @app.get("/")
 async def root():
     return {"message": "Hello World"}
