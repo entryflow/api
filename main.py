@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Request,status
 from tortoise.contrib.fastapi import register_tortoise
-from schemas import UserBase
+from schemas import (UserBase,EmailCreate)
 from models import User
+from modules import create_mail
 app = FastAPI()
 
 @app.on_event("startup")
@@ -36,3 +37,10 @@ async def create_user(user:UserBase) -> UserBase:
 async def get_user(user_id:int) -> UserBase:
     user_obj = await User.get(id=user_id)
     return UserBase.from_orm(user_obj)
+
+@app.post("/email",status_code=status.HTTP_200_OK)
+async def send_email(email: EmailCreate):
+    print(email.dict())
+    create_mail(**email.dict())
+    return {"status": "ok"}
+    
