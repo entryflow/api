@@ -1,10 +1,17 @@
-from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends
+from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPException
+from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
-from schemas import (EmailCreate,UserDB,UserIn,UserOut)
+from fastapi.security import OAuth2PasswordRequestForm
+from schemas import (EmailCreate,UserDB,UserIn,UserOut,TokenSchema,TokenPayload)
 from models import User
 from modules import create_mail
 from supabase import create_client, Client
-from typing import Annotated,Union
+from utils import (
+    get_hashed_password,
+    create_access_token,
+    create_refresh_token,
+    verify_password
+)
 
 SUPABASE_URL = "https://bahrfmiyatkrbqczfgrc.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhaHJmbWl5YXRrcmJxY3pmZ3JjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzkzODMxMCwiZXhwIjoyMDA5NTE0MzEwfQ.f4MuqZr9nS9MSQbktsDmGi_i0rUnz87eO6Oe4rGBtCA"
@@ -38,20 +45,54 @@ async def startup_event():
 async def root():
     return {"message": "Hello World"}
 
-@app.post("/users",response_model=UserOut,status_code=status.HTTP_201_CREATED)
-async def create_user(user:UserIn = Depends(),image: bytes = File(...)):
-    
-    avatar_upload = supabase.storage.from_('avatars').upload("avatars/3.pdf", image)
-    avatar_url = supabase.storage.from_('avatars').get_public_url('avatars/3.pdf')
+@app.post('/signup', summary="Create new user", response_model=UserOut)
+async def create_user(user:UserIn = Depends(),image: UploadFile = File(...)):
+    # user = User.filter(email=user.email).first()
+    # print(user)
+    # if user is not None:
+    #         raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Ya hay un usuario registrado con este correo electrónico"
+    #     )
+            
+    avatar_path = f"avatars/{user.num_control}.{image.filename.split('.')[-1]}"
+    avatar_upload = supabase.storage.from_('avatars').upload(avatar_path, image.file.read()),
+    avatar_url = supabase.storage.from_('avatars').get_public_url(avatar_path)
     
     user_obj = await User.create(name=user.name,middle_name=user.middle_name,last_name=user.last_name,
-                                 num_control=user.num_control,email=user.email,password=user.password,
-                                 avatar=avatar_url,is_active=True,access_token="123")
- 
-    return UserOut.from_orm(user_obj)
+                                 num_control=user.num_control,email=user.email,password=get_hashed_password(user.password),
+                                 avatar=avatar_url)
     
+    return UserOut.from_orm(user_obj)
+   
 
-
+@app.post('/login', summary="Create access and refresh tokens for user", response_model=TokenSchema)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    
+    user = await User.filter(email=form_data.username).first().values()
+    
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Correo electrónico o contraseña incorrectos"
+        )
+    
+    if not verify_password(form_data.password, user['password']):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Correo electrónico o contraseña incorrectos"
+        )
+    
+    return {
+        "name": user['name'],
+        "middle_name": user['middle_name'],
+        "last_name": user['last_name'],
+        "avatar": user['avatar'],
+        
+        "access_token": create_access_token(user['email']),
+        "refresh_token": create_refresh_token(user['email']),
+    }
+    
 
 @app.get("/users/{user_id}",response_model=UserOut,status_code=status.HTTP_200_OK)
 async def get_user(user_id:int) -> UserOut:

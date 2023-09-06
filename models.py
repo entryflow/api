@@ -10,7 +10,7 @@ class User(Model):
     num_control = fields.CharField(max_length=255)
     password = fields.CharField(max_length=255)
     avatar = fields.CharField(max_length=255)
-    access_token = fields.CharField(max_length=255)
+    is_active = fields.BooleanField(default=True)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
     

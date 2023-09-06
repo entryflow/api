@@ -11,32 +11,29 @@ class UserBase(BaseModel):
     email: EmailStr
     
     class Config:
-        orm_mode = True
-        allow_population_by_field_name = True
+        from_attributes=True
 
 class UserIn(UserBase):
     password: str
     
     class Config:
-        orm_mode = True
+        from_attributes=True
         
     
 class UserDB(UserBase):
     id: int
     password: str
-    access_token: str
     avatar: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    is_active: bool
     
     
 class UserOut(UserBase):
     id: int
-    access_token: str
     is_active: bool
     
-   
+    class Config:
+        from_attributes=True
      
 class EmailCreate(BaseModel):
     name: str
@@ -47,4 +44,11 @@ class EmailCreate(BaseModel):
     def __str__(self):
         return self.name+" "+self.email+" "+self.number+" "+self.message
     
+class TokenSchema(BaseModel):
+    access_token: str
+    refresh_token: str
     
+    
+class TokenPayload(BaseModel):
+    sub: str = None
+    exp: int = None
