@@ -2,8 +2,8 @@ from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPExc
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas import (EmailCreate,UserDB,UserIn,UserOut,TokenSchema,TokenPayload)
-from models import User
+from schemas import (EmailCreate,UserDB,UserIn,UserOut,TokenSchema,TokenPayload,CompanyBase,CompanyDB,CompanyOut,EmployeeBase,EmployeeDB,EmployeeOut,EmployeeIn)
+from models import (User,Company,Employee)
 from modules import create_mail
 from supabase import create_client, Client
 from utils import (
@@ -99,13 +99,39 @@ async def get_user(user_id:int) -> UserOut:
     user_obj = await User.get(id=user_id)
     return UserOut.from_orm(user_obj)
 
-
-
-
-
 @app.post("/email",status_code=status.HTTP_200_OK)
 async def send_email(email: EmailCreate):
     print(email.dict())
     create_mail(**email.dict())
     return {"status": "ok"}
-    
+
+@app.get("/employees",status_code=status.HTTP_200_OK)
+async def get_employees():
+    employ_list = await Employee.all().values()
+    return employ_list
+
+@app.get("/employees/{employee_id}",status_code=status.HTTP_200_OK)
+async def get_employee(employee_id:int):
+    employee_obj = await Employee.get(id=employee_id)
+    return EmployeeOut.from_orm(employee_obj)
+
+@app.delete("/employees/{employee_id}",status_code=status.HTTP_200_OK)
+async def delete_employee(employee_id:int):
+    await Employee.filter(id=employee_id).delete()
+    return {"status": "ok"}
+
+@app.post("/employees",status_code=status.HTTP_201_CREATED)
+async def create_employee(employee:EmployeeBase):
+    employee_obj = await Employee.create(**employee.dict())
+    return EmployeeOut.from_orm(employee_obj)
+
+@app.put("/employees/{employee_id}",status_code=status.HTTP_200_OK)
+async def update_employee(employee_id:int,employee:EmployeeIn):
+    await Employee.filter(id=employee_id).update(**employee.dict())
+    return {"status": "ok"}
+
+@app.post("/companies",status_code=status.HTTP_201_CREATED)
+async def create_company(company:CompanyBase):
+    company_obj = await Company.create(**company.dict())
+    return CompanyOut.from_orm(company_obj)
+

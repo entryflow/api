@@ -52,3 +52,57 @@ class TokenSchema(BaseModel):
 class TokenPayload(BaseModel):
     sub: str = None
     exp: int = None
+    
+class CompanyBase(BaseModel):
+    name: str
+    
+    class Config:
+        from_attributes=True
+        
+class CompanyDB(CompanyBase):
+    id: int
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    
+
+    class Config:
+        from_attributes=True
+        
+class CompanyOut(CompanyBase):
+    id: int
+    
+    class Config:
+        from_attributes=True
+
+class EmployeeBase(BaseModel):
+    name: str
+    middle_name: str
+    last_name: str
+    email: EmailStr
+    num_control: str = None
+    is_active: bool = True
+    avatar: str = None
+    
+    class Config:
+        from_attributes=True
+        
+class EmployeeIn(EmployeeBase):
+    pass
+    class Config:
+        from_attributes=True
+        
+class EmployeeDB(EmployeeBase):
+    id: int
+    avatar: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    
+    class Config:
+        from_attributes=True
+
+class EmployeeOut(EmployeeBase):
+    id: int
+    
+    class Config:
+        from_attributes=True
+        
