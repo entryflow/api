@@ -55,7 +55,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
     
 async def get_user(username: str):
     user = await User.get(email=username)
-    print(user)
     return user
 
 def hash_password(password):
