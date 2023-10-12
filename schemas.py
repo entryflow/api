@@ -11,16 +11,12 @@ class UserIn(BaseModel):
     password: str
     phone: int
     company:int
-    avatar: str = None
+   
     
     class Config:
         from_attributes=True
         
-class UserDB(UserIn):
-    id: int
-    
-    class Config:
-        from_attributes=True
+
      
 class EmailCreate(BaseModel):
     name: str
@@ -31,14 +27,12 @@ class EmailCreate(BaseModel):
     def __str__(self):
         return self.name+" "+self.email+" "+self.number+" "+self.message
     
-class TokenSchema(BaseModel):
+class Token(BaseModel):
     access_token: str
-    refresh_token: str
-    
-    
-class TokenPayload(BaseModel):
-    sub: str = None
-    exp: int = None
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str | None = None
     
 class CompanyIn(BaseModel):
     name: str
@@ -59,21 +53,16 @@ class EmployeeIn(BaseModel):
     last_name: str
     email: EmailStr
     phone: int
-    num_control: str = None
+    num_control: str 
     gender: str
-    company:CompanyDB
-    birth_date: datetime.datetime
+    company: int
+    birth_date: datetime.date
     is_active: bool = True
-    
     
     class Config:
         from_attributes=True
         
-class EmployeeDB(EmployeeIn):
-    id: int
-    avatar: str = None
-    class Config:
-        from_attributes=True
+
         
 
         

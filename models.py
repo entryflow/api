@@ -11,8 +11,7 @@ class User(Model):
     avatar = fields.CharField(max_length=255)
     company = fields.ForeignKeyField('models.Company', related_name='users')
     is_active = fields.BooleanField(default=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+   
     
     class Meta:
         table = "users"
@@ -33,8 +32,7 @@ class Employee(Model):
     company = fields.ForeignKeyField('models.Company', related_name='employees')
     is_active = fields.BooleanField(default=True)
     avatar = fields.CharField(max_length=255)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+    
     
     class Meta:
         table = "employees"
@@ -46,8 +44,7 @@ class Company(Model):
     id = fields.IntField(pk=True)
     name = fields.CharField(max_length=255)
     key = fields.CharField(max_length=255, unique=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+   
     
     class Meta:
         table = "companies"
