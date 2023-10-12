@@ -162,7 +162,11 @@ async def get_token(token:str):
 @app.get("/company",status_code=status.HTTP_200_OK)
 async def get_company_id(key:str):
     company = await Company.get(key=key)
-    return company
+    if company:
+        return company
+    else:
+        raise HTTPException(status_code=404, detail="Company not found")
+    
 
 @app.get("/users/me",status_code=status.HTTP_200_OK)
 async def get_user_id(user_id:int):
