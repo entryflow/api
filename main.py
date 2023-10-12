@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPExc
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas import (EmailCreate,UserDB,UserIn,UserOut,TokenSchema,TokenPayload,CompanyBase,CompanyDB,CompanyOut,EmployeeBase,EmployeeDB,EmployeeOut,EmployeeIn)
+from schemas import (EmployeeIn,EmployeeDB,UserDB,UserIn)
 from models import (User,Company,Employee)
 from modules import create_mail
 from supabase import create_client, Client
@@ -58,93 +58,33 @@ async def startup_event():
 async def root():
     return {"message": "Hello World"}
 
-@app.post('/signup', summary="Create new user", response_model=UserOut)
-async def create_user(user:UserIn = Depends(),image: UploadFile = File(...)):
-    # user = User.filter(email=user.email).first()
-    # print(user)
-    # if user is not None:
-    #         raise HTTPException(
-    #         status_code=status.HTTP_400_BAD_REQUEST,
-    #         detail="Ya hay un usuario registrado con este correo electrónico"
-    #     )
-            
-    avatar_path = f"avatars/{user.num_control}.{image.filename.split('.')[-1]}"
-    avatar_upload = supabase.storage.from_('avatars').upload(avatar_path, image.file.read()),
-    avatar_url = supabase.storage.from_('avatars').get_public_url(avatar_path)
-    
-    user_obj = await User.create(name=user.name,middle_name=user.middle_name,last_name=user.last_name,
-                                 num_control=user.num_control,email=user.email,password=get_hashed_password(user.password),
-                                 avatar=avatar_url)
-    
-    return UserOut.from_orm(user_obj)
-   
-
-@app.post('/login', summary="Create access and refresh tokens for user", response_model=TokenSchema)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    
-    user = await User.filter(email=form_data.username).first().values()
-    
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Correo electrónico o contraseña incorrectos"
-        )
-    
-    if not verify_password(form_data.password, user['password']):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Correo electrónico o contraseña incorrectos"
-        )
-    
-    return {
-        "name": user['name'],
-        "middle_name": user['middle_name'],
-        "last_name": user['last_name'],
-        "avatar": user['avatar'],
-        
-        "access_token": create_access_token(user['email']),
-        "refresh_token": create_refresh_token(user['email']),
-    }
-    
-
-@app.get("/users/{user_id}",response_model=UserOut,status_code=status.HTTP_200_OK)
-async def get_user(user_id:int) -> UserOut:
-    user_obj = await User.get(id=user_id)
-    return UserOut.from_orm(user_obj)
-
-@app.post("/email",status_code=status.HTTP_200_OK)
-async def send_email(email: EmailCreate):
-    print(email.dict())
-    create_mail(**email.dict())
-    return {"status": "ok"}
 
 @app.get("/employees",status_code=status.HTTP_200_OK)
 async def get_employees():
-    employ_list = await Employee.all().values()
-    return employ_list
+    employees = await Employee.all()
+    return employees
 
-@app.get("/employees/{employee_id}",status_code=status.HTTP_200_OK)
-async def get_employee(employee_id:int):
-    employee_obj = await Employee.get(id=employee_id)
-    return EmployeeOut.from_orm(employee_obj)
+@app.post("/employees", response_model=EmployeeDB,status_code=status.)
+async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = File(...)):
+    
+    avatar_path = f"avatars/{employee.num_control}.{image.filename.split('.')[-1]}"
+    avatar_upload = supabase.storage.from_('avatars').upload(avatar_path, image.file.read()),
+    avatar_url = supabase.storage.from_('avatars').get_public_url(avatar_path)
+    print(avatar_url)
+    company = await Company.get(id=employee.company)
+    employee_obj = await Employee.create(name=employee.name,middle_name=employee.middle_name,last_name=employee.last_name,
+                                         phone=employee.phone,num_control=employee.num_control,gender=employee.gender,
+                                         birth_date=employee.birth_date,email=employee.email,avatar=avatar_url,company=
+                                         )
+    return employee_obj
 
-@app.delete("/employees/{employee_id}",status_code=status.HTTP_200_OK)
-async def delete_employee(employee_id:int):
-    await Employee.filter(id=employee_id).delete()
-    return {"status": "ok"}
+@app.get("/employees/{employee_id}", response_model=list[EmployeeDB])
+async def get_employee(employee_id: int):
+    employee = await Employee.get(id=employee_id)
+    return employee
 
-@app.post("/employees",status_code=status.HTTP_201_CREATED)
-async def create_employee(employee:EmployeeBase):
-    employee_obj = await Employee.create(**employee.dict())
-    return EmployeeOut.from_orm(employee_obj)
-
-@app.put("/employees/{employee_id}",status_code=status.HTTP_200_OK)
-async def update_employee(employee_id:int,employee:EmployeeIn):
+@app.put("/employees/{employee_id}", response_model=EmployeeDB)
+async def update_employee(employee_id: int, employee: EmployeeIn):
     await Employee.filter(id=employee_id).update(**employee.dict())
-    return {"status": "ok"}
-
-@app.post("/companies",status_code=status.HTTP_201_CREATED)
-async def create_company(company:CompanyBase):
-    company_obj = await Company.create(**company.dict())
-    return CompanyOut.from_orm(company_obj)
-
+    employee_obj = await Employee.get(id=employee_id)
+    return employee_obj

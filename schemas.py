@@ -3,34 +3,21 @@ from datetime import datetime
 from fastapi import File
 import datetime
 
-class UserBase(BaseModel):
+class UserIn(BaseModel):
     name: str
     middle_name: str
     last_name: str
-    num_control: str = None
     email: EmailStr
-    
-    class Config:
-        from_attributes=True
-
-class UserIn(UserBase):
     password: str
+    phone: int
+    company:int
+    avatar: str = None
     
     class Config:
         from_attributes=True
         
-    
-class UserDB(UserBase):
+class UserDB(UserIn):
     id: int
-    password: str
-    avatar: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    
-    
-class UserOut(UserBase):
-    id: int
-    is_active: bool
     
     class Config:
         from_attributes=True
@@ -53,56 +40,40 @@ class TokenPayload(BaseModel):
     sub: str = None
     exp: int = None
     
-class CompanyBase(BaseModel):
+class CompanyIn(BaseModel):
     name: str
+    key: str
     
     class Config:
         from_attributes=True
         
-class CompanyDB(CompanyBase):
+class CompanyDB(CompanyIn):
     id: int
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
     
-
     class Config:
         from_attributes=True
         
-class CompanyOut(CompanyBase):
-    id: int
-    
-    class Config:
-        from_attributes=True
-
-class EmployeeBase(BaseModel):
+class EmployeeIn(BaseModel):
     name: str
     middle_name: str
     last_name: str
     email: EmailStr
+    phone: int
     num_control: str = None
+    gender: str
+    company:CompanyDB
+    birth_date: datetime.datetime
     is_active: bool = True
+    
+    
+    class Config:
+        from_attributes=True
+        
+class EmployeeDB(EmployeeIn):
+    id: int
     avatar: str = None
-    
     class Config:
         from_attributes=True
         
-class EmployeeIn(EmployeeBase):
-    pass
-    class Config:
-        from_attributes=True
-        
-class EmployeeDB(EmployeeBase):
-    id: int
-    avatar: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    
-    class Config:
-        from_attributes=True
 
-class EmployeeOut(EmployeeBase):
-    id: int
-    
-    class Config:
-        from_attributes=True
         
