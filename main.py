@@ -60,7 +60,7 @@ async def root():
     return {"message": "Hello World"}
 
 @app.post("/employees", status_code=status.HTTP_201_CREATED)
-async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = File()):
+async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = None):
     is_registered = await Employee.filter(email=employee.num_control).exists()
     avatar_url = 'https://ionicframework.com/docs/img/demos/avatar.svg'
     
