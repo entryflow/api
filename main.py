@@ -151,10 +151,13 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @app.get("/token",status_code=status.HTTP_200_OK)
 async def get_token(token:str):
-    token_check = await get_current_user(token)
-    print(token_check)
-    if token_check:
-        return {"status":True,"user":token_check}
+    user_check = await get_current_user(token)
+    company = await Company.get(id=user_check.company_id)
+    user = dict(user_check)
+    user['company'] = company
+    
+    if user_check:
+        return {"status":True,"user":user}
     else:
         return {"status":False,"user":None}
    
