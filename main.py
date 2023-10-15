@@ -199,6 +199,20 @@ async def get_user_id(user_id:int):
 
 @app.websocket("/face-detection")
 async def face_detection(websocket: WebSocket):
+    
+    employees_company = await Employee.filter(company_id=1).all()
+    
+    path = "images"
+    os.makedirs(path, exist_ok=True)
+    
+    for employee in employees_company:
+        os.makedirs(path+"/"+str(employee.id), exist_ok=True)
+        response = requests.get(employee.avatar)
+        
+        if response.status_code == 200:
+            with open(f"{path}/{employee.id}/{employee.id}.jpeg", "wb") as f:
+                f.write(response.content)
+                
     await websocket.accept()
     
     queue: asyncio.Queue = asyncio.Queue(maxsize=10)
@@ -220,18 +234,7 @@ async def receive(websocket: WebSocket, queue: asyncio.Queue):
 
 async def detect(websocket: WebSocket, queue: asyncio.Queue):
     
-    employees_company = await Employee.filter(company_id=1).all()
     
-    path = "images"
-    os.makedirs(path, exist_ok=True)
-    
-    for employee in employees_company:
-        os.makedirs(path+"/"+str(employee.id), exist_ok=True)
-        response = requests.get(employee.avatar)
-        
-        if response.status_code == 200:
-            with open(f"{path}/{employee.id}/{employee.id}.jpeg", "wb") as f:
-                f.write(response.content)
                 
     while True:
         bytes = await queue.get()
