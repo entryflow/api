@@ -2,6 +2,7 @@ from pydantic import BaseModel,Field,EmailStr
 from datetime import datetime
 from fastapi import File
 import datetime
+from typing import List, Tuple
 
 class UserIn(BaseModel):
     name: str
@@ -62,7 +63,8 @@ class EmployeeIn(BaseModel):
     class Config:
         from_attributes=True
         
-
+class Faces(BaseModel):
+    faces: List[Tuple[int, int, int, int]]
         
 
         

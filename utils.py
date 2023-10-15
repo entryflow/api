@@ -4,7 +4,7 @@ from typing import Union, Any
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi import  HTTPException, Depends
+from fastapi import  HTTPException, Depends, WebSocket
 from models import (User,Company,Employee)
 import secrets
 import pytz 
@@ -63,3 +63,4 @@ def hash_password(password):
 def generate_random_name():
     random_string = secrets.token_hex(10)
     return random_string
+

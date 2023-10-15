@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPException
+from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas import (EmployeeIn,UserIn,Token)
+from schemas import (EmployeeIn,UserIn,Token,Faces)
 from models import (User,Company,Employee)
 from modules import create_mail
 from supabase import create_client, Client
 from datetime import datetime, timedelta
+import requests
 from utils import (
     create_access_token,
     get_current_user,
@@ -16,6 +17,13 @@ from utils import (
     verify_password
     
 )
+import asyncio
+import cv2
+import pandas as pd
+import numpy as np
+from deepface import DeepFace
+from deepface.basemodels import VGGFace
+import os
 from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
@@ -36,6 +44,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+cascade_classifier = cv2.CascadeClassifier()
+
 @app.on_event("startup")
 async def startup_event():
     TORTOISE_ORM = {
@@ -54,9 +64,17 @@ async def startup_event():
         generate_schemas=True,
         add_exception_handlers=True,
     )
+    cascade_classifier.load(
+        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    )
+    
 
 @app.get("/")
 async def root():
+    
+    
+    
+    
     return {"message": "Hello World"}
 
 @app.post("/employees", status_code=status.HTTP_201_CREATED)
@@ -178,4 +196,68 @@ async def get_user_id(user_id:int):
         return user
     else: 
         raise HTTPException(status_code=404, detail="User not found")
+
+@app.websocket("/face-detection")
+async def face_detection(websocket: WebSocket):
+    await websocket.accept()
     
+    queue: asyncio.Queue = asyncio.Queue(maxsize=10)
+    detect_task = asyncio.create_task(detect(websocket, queue))
+    try:
+        while True:
+            await receive(websocket, queue)
+    except WebSocketDisconnect:
+        detect_task.cancel()
+        await websocket.close()
+       
+async def receive(websocket: WebSocket, queue: asyncio.Queue):
+    bytes = await websocket.receive_bytes()
+    try:
+        queue.put_nowait(bytes)
+    except asyncio.QueueFull:
+        pass
+
+
+async def detect(websocket: WebSocket, queue: asyncio.Queue):
+    
+    employees_company = await Employee.filter(company_id=1).all()
+    
+    path = "images"
+    os.makedirs(path, exist_ok=True)
+    
+    for employee in employees_company:
+        os.makedirs(path+"/"+str(employee.id), exist_ok=True)
+        response = requests.get(employee.avatar)
+        
+        if response.status_code == 200:
+            with open(f"{path}/{employee.id}/{employee.id}.jpeg", "wb") as f:
+                f.write(response.content)
+                
+    while True:
+        bytes = await queue.get()
+        data = np.frombuffer(bytes, dtype=np.uint8)
+        img = cv2.imdecode(data, 1)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        faces = cascade_classifier.detectMultiScale(gray)
+
+        if len(faces) > 0:
+            faces_output = Faces(faces=faces.tolist())
+            
+            with open("imagen2.jpg", "wb") as image_file:
+                image_file.write(bytes)
+            
+            df = await asyncio.to_thread(
+                DeepFace.find,
+                img_path="imagen2.jpg",
+                db_path="images/",
+                model_name="Facenet"
+            )
+            
+           
+            print(df)
+            
+        else:
+            faces_output = Faces(faces=[])
+           
+       
+        await websocket.send_json(faces_output.dict())
