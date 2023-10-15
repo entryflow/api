@@ -200,6 +200,10 @@ async def get_user_id(user_id:int):
 @app.websocket("/face-detection")
 async def face_detection(websocket: WebSocket):
     
+    
+                
+    await websocket.accept()
+    
     employees_company = await Employee.filter(company_id=1).all()
     
     path = "images"
@@ -213,8 +217,6 @@ async def face_detection(websocket: WebSocket):
             with open(f"{path}/{employee.id}/{employee.id}.jpeg", "wb") as f:
                 f.write(response.content)
                 
-    await websocket.accept()
-    
     queue: asyncio.Queue = asyncio.Queue(maxsize=10)
     detect_task = asyncio.create_task(detect(websocket, queue))
     try:
