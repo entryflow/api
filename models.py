@@ -55,8 +55,8 @@ class Company(Model):
 class EmployeeIn(Model):
     id = fields.IntField(pk=True)
     employee = fields.ForeignKeyField('models.Employee', related_name='employee_in')
-    date = fields.DateField(auto_now=True)
-    time = fields.TimeField(auto_now=True)
+    date = fields.DatetimeField(auto_now=True)
+    
     
     class Meta:
         table = "employee_in"
@@ -67,8 +67,8 @@ class EmployeeIn(Model):
 class EmployeeOut(Model):
     id = fields.IntField(pk=True)
     employee = fields.ForeignKeyField('models.Employee', related_name='employee_out')
-    date = fields.DateField(auto_now=True)
-    time = fields.TimeField(auto_now=True)
+    date = fields.DatetimeField(auto_now=True)
+    
     
     class Meta:
         table = "employee_out"
