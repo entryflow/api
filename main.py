@@ -1,9 +1,10 @@
+import time
 from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
 from schemas import (EmployeeIn,UserIn,Token,Faces)
-from models import (User,Company,Employee)
+from models import (User,Company,Employee,EmployeeIn,EmployeeOut)
 from modules import create_mail
 from supabase import create_client, Client
 from datetime import datetime, timedelta
@@ -25,6 +26,7 @@ from deepface import DeepFace
 from deepface.basemodels import VGGFace
 import os
 from fastapi.middleware.cors import CORSMiddleware
+import shutil
 
 origins = [
     "*"
@@ -197,17 +199,21 @@ async def get_user_id(user_id:int):
     else: 
         raise HTTPException(status_code=404, detail="User not found")
 
-@app.websocket("/face-detection")
-async def face_detection(websocket: WebSocket):
-    
-    
-                
-    await websocket.accept()
+@app.websocket("/face-detection/{type_id}")
+async def face_detection(websocket: WebSocket,type_id:int):
     
     employees_company = await Employee.filter(company_id=1).all()
     
     path = "images"
+    image = "imagen2.jpg"
+    
+    if(os.path.exists(image)):
+        os.remove(image)
+    if(os.path.exists(path)):
+        shutil.rmtree(path)
+    
     os.makedirs(path, exist_ok=True)
+                
     
     for employee in employees_company:
         os.makedirs(path+"/"+str(employee.id), exist_ok=True)
@@ -217,8 +223,12 @@ async def face_detection(websocket: WebSocket):
             with open(f"{path}/{employee.id}/{employee.id}.jpeg", "wb") as f:
                 f.write(response.content)
                 
+    await websocket.accept()
+    
+    
+                
     queue: asyncio.Queue = asyncio.Queue(maxsize=10)
-    detect_task = asyncio.create_task(detect(websocket, queue))
+    detect_task = asyncio.create_task(detect(websocket, queue,type_id))
     try:
         while True:
             await receive(websocket, queue)
@@ -234,35 +244,52 @@ async def receive(websocket: WebSocket, queue: asyncio.Queue):
         pass
 
 
-async def detect(websocket: WebSocket, queue: asyncio.Queue):
+async def detect(websocket: WebSocket, queue: asyncio.Queue,type_id:int):
     
     
-                
     while True:
-        bytes = await queue.get()
-        data = np.frombuffer(bytes, dtype=np.uint8)
-        img = cv2.imdecode(data, 1)
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        faces = cascade_classifier.detectMultiScale(gray)
-
-        if len(faces) > 0:
-            faces_output = Faces(faces=faces.tolist())
+        try:
+            bytes = await queue.get()
+            data = np.frombuffer(bytes, dtype=np.uint8)
+            img = cv2.imdecode(data, 1)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            faces = cascade_classifier.detectMultiScale(gray)
             
-            with open("imagen2.jpg", "wb") as image_file:
-                image_file.write(bytes)
             
-            df = await asyncio.to_thread(
-                DeepFace.find,
-                img_path="imagen2.jpg",
-                db_path="images/",
-                model_name="Facenet"
-            )
+            if len(faces) > 0:
+                faces_output = Faces(faces=faces.tolist())
+                
+                with open("imagen2.jpg", "wb") as image_file:
+                    image_file.write(bytes)
+                
+                df = await asyncio.to_thread(
+                        DeepFace.find,
+                        img_path="imagen2.jpg",
+                        db_path="images/",
+                        model_name="Facenet"
+                )
+                
+                #print(df)
+                id = str(df[0]['identity'])
+                id = id.split("/")[1]
+                
+                if type_id == 1:
+                    employee_in = await EmployeeIn.create(employee_id=id)
+                    await websocket.send_json(employee_in.dict())
+                else:
+                    employee_out = await EmployeeOut.create(employee_id=id)
+                    await websocket.send_json(employee_out.dict())
+                
+                time.sleep(3)
+            elif len(faces) == 0:
+                continue
+                
+            else:
+                faces_output = Faces(faces=[])
             
-           
-            print(df)
-            
-        else:
+        except Exception as e:
+            print(e)
             faces_output = Faces(faces=[])
            
-       
+        
         await websocket.send_json(faces_output.dict())

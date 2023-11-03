@@ -51,3 +51,27 @@ class Company(Model):
         
     def __str__(self):
         return self.name
+    
+class EmployeeIn(Model):
+    id = fields.IntField(pk=True)
+    employee = fields.ForeignKeyField('models.Employee', related_name='employee_in')
+    date = fields.DateField(auto_now=True)
+    time = fields.TimeField(auto_now=True)
+    
+    class Meta:
+        table = "employee_in"
+        
+    def __str__(self):
+        return self.employee.name
+    
+class EmployeeOut(Model):
+    id = fields.IntField(pk=True)
+    employee = fields.ForeignKeyField('models.Employee', related_name='employee_out')
+    date = fields.DateField(auto_now=True)
+    time = fields.TimeField(auto_now=True)
+    
+    class Meta:
+        table = "employee_out"
+        
+    def __str__(self):
+        return self.employee.name
