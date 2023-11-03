@@ -246,9 +246,9 @@ async def receive(websocket: WebSocket, queue: asyncio.Queue):
 
 async def detect(websocket: WebSocket, queue: asyncio.Queue,type_id:int):
     
-    
+    tmp_id = 0
     while True:
-        is_face_recognized = False
+        
         try:
             bytes = await queue.get()
             data = np.frombuffer(bytes, dtype=np.uint8)
@@ -274,19 +274,17 @@ async def detect(websocket: WebSocket, queue: asyncio.Queue,type_id:int):
                 id = str(df[0]['identity'])
                 id = id.split("/")[1]
                 
-                last_id = await EmployeeOut.filter(employee_id=id).order_by('-id').first()
-                employee = await Employee.get(id=id) 
-                if type_id == 1:
-                    if last_id != id:
+                if id != tmp_id:
+                    tmp_id = id
+                    employee = await Employee.get(id=id) 
+                    if type_id == 1:
                         employee_in = await EmployeeIn.create(employee_id=id)
-                    
-                else:
-                    if last_id != id:
+                    else:
                         employee_out = await EmployeeOut.create(employee_id=id)
-                    
-                await websocket.send_json(dict(employee))
+                    time.sleep(3)
+                    await websocket.send_json(dict(employee))
                 
-                time.sleep(3)
+               
             elif len(faces) == 0:
                 continue
                 
