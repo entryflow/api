@@ -272,14 +272,14 @@ async def detect(websocket: WebSocket, queue: asyncio.Queue,type_id:int):
                 #print(df)
                 id = str(df[0]['identity'])
                 id = id.split("/")[1]
-                employee = await Employee.filter(id=id).first()
+                employee = await Employee.get(id=id) 
                 if type_id == 1:
                     employee_in = await EmployeeIn.create(employee_id=id)
                     
                 else:
                     employee_out = await EmployeeOut.create(employee_id=id)
                     
-                await websocket.send_json(employee.dict())
+                await websocket.send_json(dict(employee))
                 
                 time.sleep(3)
             elif len(faces) == 0:
