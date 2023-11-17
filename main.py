@@ -9,6 +9,7 @@ from modules import create_mail
 from supabase import create_client, Client
 from datetime import datetime, timedelta
 import requests
+from tortoise.transactions import in_transaction
 from utils import (
     create_access_token,
     get_current_user,
@@ -128,6 +129,8 @@ async def delete_employee(employee_id: int):
     await Employee.filter(id=employee_id).delete()
     return {"message": "Employee deleted successfully"}
 
+
+
 @app.post("/signup", status_code=status.HTTP_201_CREATED)
 async def sign_up(user: UserIn = Depends(), image: UploadFile = File()):
     user_exists = get_user(user.email)
@@ -198,6 +201,31 @@ async def get_user_id(user_id:int):
         return user
     else: 
         raise HTTPException(status_code=404, detail="User not found")
+
+@app.get("/employes/records",status_code=status.HTTP_200_OK)
+async def get_employees_records():
+    sql_query = """ SELECT
+    employees.id,
+    employees.name,
+    employees.middle_name,
+    employees.last_name,
+    employees.avatar,
+    COUNT(DISTINCT employee_in.date) as total_ins,
+    COUNT(DISTINCT employee_out.date) as total_outs
+FROM
+    employees 
+LEFT JOIN employee_in ON employee_in.employee_id = employees.id
+LEFT JOIN employee_out ON employee_out.employee_id = employees.id
+GROUP BY
+    employees.id, employees.name, employees.middle_name, employees.last_name, employees.avatar;
+
+""" 
+    
+    # Wrap the SQL query execution in a transaction
+    async with in_transaction() as conn:
+        result = await conn.execute_query(sql_query)
+        
+    return result[1]
 
 @app.websocket("/face-detection/{type_id}")
 async def face_detection(websocket: WebSocket,type_id:int):
@@ -297,3 +325,4 @@ async def detect(websocket: WebSocket, queue: asyncio.Queue,type_id:int):
            
         
         await websocket.send_json(faces_output.dict())
+        
