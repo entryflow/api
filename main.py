@@ -204,6 +204,21 @@ async def get_user_id(user_id:int):
         return user
     else: 
         raise HTTPException(status_code=404, detail="User not found")
+    
+@app.put("/users/me",status_code=status.HTTP_200_OK)
+async def update_user(user_id:int,user:UserIn = Depends(),image: UploadFile = File()):
+    if image:
+        random_string = generate_random_name()
+        avatar_path = f"avatars/{random_string}.{image.filename.split('.')[-1]}"
+        avatar_upload = supabase.storage.from_('avatars').upload(avatar_path, image.file.read()),
+        avatar_url = supabase.storage.from_('avatars').get_public_url(avatar_path)
+    else:
+        avatar_url = user.avatar
+        
+    await User.filter(id=user_id).update(name=user.name,middle_name=user.middle_name,last_name=user.last_name,
+                                        phone=user.phone,email=user.email,avatar=avatar_url,company_id=user.company)
+    user_obj = await User.get(id=user_id)
+    return user_obj
 
 @app.get("/employees/records",status_code=status.HTTP_200_OK)
 async def get_employees_records():
