@@ -3,8 +3,8 @@ from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPExc
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas import (EmployeeIn,UserIn,Token,Faces)
-from models import (User,Company,Employee,EmployeeIn,EmployeeOut)
+from schemas import (UserIn,Token,Faces,EmployeeSchema)
+from models import (User,Company,Employee,EmployeeIn ,EmployeeOut)
 from modules import create_mail
 from supabase import create_client, Client
 from datetime import datetime, timedelta
@@ -81,7 +81,7 @@ async def root():
     return {"message": "Hello World"}
 
 @app.post("/employees", status_code=status.HTTP_201_CREATED)
-async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = None):
+async def create_employee(employee: EmployeeSchema = Depends() ,image: UploadFile = None):
     is_registered = await Employee.filter(num_control=employee.num_control).exists()
     avatar_url = 'https://ionicframework.com/docs/img/demos/avatar.svg'
     

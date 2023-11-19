@@ -48,7 +48,7 @@ class CompanyDB(CompanyIn):
     class Config:
         from_attributes=True
         
-class EmployeeIn(BaseModel):
+class EmployeeSchema(BaseModel):
     name: str
     middle_name: str
     last_name: str
