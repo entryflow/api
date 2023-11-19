@@ -82,7 +82,7 @@ async def root():
 
 @app.post("/employees", status_code=status.HTTP_201_CREATED)
 async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = None):
-    is_registered = await Employee.filter(email=employee.num_control).exists()
+    is_registered = await Employee.filter(num_control=employee.num_control).exists()
     avatar_url = 'https://ionicframework.com/docs/img/demos/avatar.svg'
     
     if is_registered:
@@ -98,8 +98,8 @@ async def create_employee(employee: EmployeeIn = Depends(),image: UploadFile = N
                                         phone=employee.phone,num_control=employee.num_control,gender=employee.gender,
                                         birth_date=employee.birth_date,email=employee.email,avatar=avatar_url,company_id=employee.company
                                         )
+        return employee_obj
     
-    return employee_obj
 
 @app.get("/employees/{employee_id}", status_code=status.HTTP_200_OK)
 async def get_employee(employee_id: int):
@@ -202,7 +202,32 @@ async def get_user_id(user_id:int):
     else: 
         raise HTTPException(status_code=404, detail="User not found")
 
-@app.get("/employes/records",status_code=status.HTTP_200_OK)
+@app.get("/employees/records",status_code=status.HTTP_200_OK)
+async def get_employees_records():
+    sql_query = """ SELECT
+    employees.id,
+    employees.name,
+    employees.middle_name,
+    employees.last_name,
+    employees.avatar,
+    COUNT(DISTINCT employee_in.date) as total_ins,
+    COUNT(DISTINCT employee_out.date) as total_outs
+FROM
+    employees 
+LEFT JOIN employee_in ON employee_in.employee_id = employees.id
+LEFT JOIN employee_out ON employee_out.employee_id = employees.id
+GROUP BY
+    employees.id, employees.name, employees.middle_name, employees.last_name, employees.avatar;
+
+""" 
+    
+    # Wrap the SQL query execution in a transaction
+    async with in_transaction() as conn:
+        result = await conn.execute_query(sql_query)
+        
+    return result[1]
+
+@app.get("/employees/charts",status_code=status.HTTP_200_OK)
 async def get_employees_records():
     sql_query = """ SELECT
     employees.id,
