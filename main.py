@@ -118,9 +118,12 @@ async def update_employee(employee_id: int, employee: EmployeeSchema = Depends()
         avatar_path = f"avatars/{random_string}.{image.filename.split('.')[-1]}"
         avatar_upload = supabase.storage.from_('avatars').upload(avatar_path, image.file.read()),
         avatar_url = supabase.storage.from_('avatars').get_public_url(avatar_path)
-        employee.avatar = avatar_url
+    else:
+        avatar_url = employee.avatar
         
-    await Employee.filter(id=employee_id).update(**employee.dict())
+    await Employee.filter(id=employee_id).update(name=employee.name,middle_name=employee.middle_name,last_name=employee.last_name,
+                                        phone=employee.phone,num_control=employee.num_control,gender=employee.gender,
+                                        birth_date=employee.birth_date,email=employee.email,avatar=avatar_url,company_id=employee.company)
     employee_obj = await Employee.get(id=employee_id)
     return employee_obj
 
