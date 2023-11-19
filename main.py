@@ -112,7 +112,7 @@ async def get_employees_by_company(company_id: int):
     return employees
 
 @app.put("/employees/{employee_id}", status_code=status.HTTP_200_OK)
-async def update_employee(employee_id: int, employee: EmployeeIn = Depends(),image: UploadFile = None ):
+async def update_employee(employee_id: int, employee: EmployeeSchema = Depends(),image: UploadFile = None ):
     if image:
         random_string = generate_random_name()
         avatar_path = f"avatars/{random_string}.{image.filename.split('.')[-1]}"
