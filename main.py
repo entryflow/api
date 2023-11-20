@@ -220,7 +220,7 @@ async def update_user(user_id:int,user:UserIn = Depends(),image: UploadFile = Fi
     user_obj = await User.get(id=user_id)
     return user_obj
 
-@app.get("/employees/records",status_code=status.HTTP_200_OK)
+@app.get("/records",status_code=status.HTTP_200_OK)
 async def get_employees_records():
     sql_query = """ SELECT
     employees.id,
@@ -245,7 +245,7 @@ GROUP BY
         
     return result[1]
 
-@app.get("/employees/charts",status_code=status.HTTP_200_OK)
+@app.get("/charts",status_code=status.HTTP_200_OK)
 async def get_employees_records():
     sql_query = """ SELECT
     employees.id,
