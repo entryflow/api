@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request,status,File,Form,UploadFile,Depends,HTTPExc
 from fastapi.responses import RedirectResponse
 from tortoise.contrib.fastapi import register_tortoise
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas import (UserIn,Token,Faces,EmployeeSchema)
+from schemas import (UserIn,Token,Faces,EmployeeSchema,UserEdit)
 from models import (User,Company,Employee,EmployeeIn ,EmployeeOut)
 from modules import create_mail
 from supabase import create_client, Client
@@ -206,7 +206,9 @@ async def get_user_id(user_id:int):
         raise HTTPException(status_code=404, detail="User not found")
     
 @app.put("/users/me",status_code=status.HTTP_200_OK)
-async def update_user(user_id:int,user:UserIn = Depends(),image: UploadFile = File()):
+async def update_user(user_id:int,user:UserEdit = Depends(),image: UploadFile = File()):
+    
+    
     if image:
         random_string = generate_random_name()
         avatar_path = f"avatars/{random_string}.{image.filename.split('.')[-1]}"
@@ -216,7 +218,7 @@ async def update_user(user_id:int,user:UserIn = Depends(),image: UploadFile = Fi
         avatar_url = user.avatar
         
     await User.filter(id=user_id).update(name=user.name,middle_name=user.middle_name,last_name=user.last_name,
-                                        phone=user.phone,email=user.email,avatar=avatar_url,company_id=user.company)
+                                        email=user.email,avatar=avatar_url)
     user_obj = await User.get(id=user_id)
     return user_obj
 

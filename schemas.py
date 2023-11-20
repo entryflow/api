@@ -10,14 +10,20 @@ class UserIn(BaseModel):
     last_name: str
     email: EmailStr
     password: str
-    phone: int
     company:int
    
     
     class Config:
         from_attributes=True
         
-
+class UserEdit(BaseModel):
+    name: str
+    middle_name: str
+    last_name: str
+    email: EmailStr
+    
+    class Config:
+        from_attributes=True
      
 class EmailCreate(BaseModel):
     name: str
